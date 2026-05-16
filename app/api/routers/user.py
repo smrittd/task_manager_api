@@ -7,6 +7,9 @@ from app.crud.user import get_user_by_email, create_user
 from app.database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.security import create_access_token, verify_password
+
+from app.api.dependecies import get_current_user
+from app.models.user import User
 router = APIRouter(tags=["Users"], prefix="/users")
 
 
@@ -27,7 +30,7 @@ async def register_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post('/login', response_model=Token)
-async def login_user(form_data: OAuth2PasswordRequestForm, db: AsyncSession = Depends(get_db)):
+async def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, email=form_data.username)
 
 
@@ -40,3 +43,7 @@ async def login_user(form_data: OAuth2PasswordRequestForm, db: AsyncSession = De
     
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get('/me', response_model=UserResponse)
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
